@@ -63,7 +63,7 @@ export function PositionSizingCalculator() {
   const [error, setError] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const [history, setHistory] = useState<CalculationHistory[]>([])
-  const [usingMockData, setUsingMockData] = useState<boolean>(true) // Default to true
+  const [usingMockData, setUsingMockData] = useState<boolean>(false) // Default to false since we have API keys
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
 
   // Fetch price function using our API route
@@ -460,7 +460,7 @@ export function PositionSizingCalculator() {
             </Alert>
           )}
 
-          {usingMockData && (
+          {usingMockData && price > 0 && (
             <Alert className="mt-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
               <Info className="h-4 w-4" />
               <AlertTitle>Modo Demo</AlertTitle>

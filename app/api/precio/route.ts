@@ -37,8 +37,24 @@ export async function GET(request: NextRequest) {
     // Log para depuración (no incluye la clave completa)
     console.log(`TWELVE_DATA_KEY disponible: ${apiKey ? "Sí (longitud: " + apiKey.length + ")" : "No"}`)
 
+    // Verificar si la API key es válida (no solo si existe)
+    const isValidApiKey = apiKey && apiKey.trim() !== "" && apiKey.length > 10
+
+    if (!isValidApiKey) {
+      console.log("API key is missing or invalid. Using mock price data for:", ticker)
+      const mockPrice = getMockPrice(ticker)
+
+      return NextResponse.json({
+        ticker,
+        price: Number(mockPrice.toFixed(2)),
+        timestamp: new Date().toISOString(),
+        isMockData: true,
+      })
+    }
+
     // If no API key is available, return mock data
-    if (!apiKey || apiKey.trim() === "") {
+    // Esta condición ya no debería ejecutarse, pero la mantenemos por seguridad
+    if (!isValidApiKey) {
       console.log("No API key found. Using mock price data for:", ticker)
       const mockPrice = getMockPrice(ticker)
 
