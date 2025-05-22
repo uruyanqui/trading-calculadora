@@ -34,6 +34,7 @@ interface ApiResponse {
   data?: TwelveDataResponse
   error?: string
   message?: string
+  debug?: any
 }
 
 interface UseTwelveDataReturn {
@@ -65,14 +66,29 @@ export function useTwelveData(): UseTwelveDataReturn {
       // Hacer la petición a nuestro endpoint seguro
       const response = await fetch(`/api/twelve?symbol=${encodeURIComponent(symbol)}`)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      // Obtener el texto de la respuesta para depuración
+      const responseText = await response.text()
+
+      // Intentar parsear como JSON
+      let result: ApiResponse
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("Error parsing API response:", parseError)
+        console.error("Response text:", responseText.substring(0, 200))
+        throw new Error(`Invalid response format: ${responseText.substring(0, 100)}...`)
       }
 
-      const result: ApiResponse = await response.json()
+      if (!response.ok) {
+        const errorMsg = result.message || result.error || `HTTP error! status: ${response.status}`
+        console.error("API error:", errorMsg, result.debug || {})
+        throw new Error(errorMsg)
+      }
 
       if (!result.success) {
-        throw new Error(result.message || result.error || "Unknown error occurred")
+        const errorMsg = result.message || result.error || "Unknown error occurred"
+        console.error("API error:", errorMsg, result.debug || {})
+        throw new Error(errorMsg)
       }
 
       if (!result.data) {

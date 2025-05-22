@@ -1,17 +1,92 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, AlertCircle, CheckCircle, TrendingUp } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, TrendingUp, Info, RefreshCw } from "lucide-react"
 import { useTwelveData } from "@/hooks/use-twelve-data"
+
+interface EnvCheckResult {
+  success: boolean
+  environment: string
+  twelveDataKey: {
+    exists: boolean
+    length: number | null
+    firstChars: string | null
+    lastChars: string | null
+  }
+  timestamp: string
+  error?: string
+}
 
 export function TwelveDataTest() {
   const [symbol, setSymbol] = useState<string>("MSFT")
   const { data, loading, error, fetchData, clearData } = useTwelveData()
+  const [envCheck, setEnvCheck] = useState<EnvCheckResult | null>(null)
+  const [checkingEnv, setCheckingEnv] = useState<boolean>(false)
+  const [envError, setEnvError] = useState<string | null>(null)
+
+  // Verificar el entorno al cargar el componente
+  useEffect(() => {
+    checkEnvironment()
+  }, [])
+
+  const checkEnvironment = async () => {
+    setCheckingEnv(true)
+    setEnvError(null)
+
+    try {
+      console.log("Checking environment...")
+      const response = await fetch("/api/env-check", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      })
+
+      console.log("Environment check response status:", response.status)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text()
+        console.error("Non-JSON response:", text.substring(0, 200))
+        throw new Error("Server returned non-JSON response")
+      }
+
+      const result = await response.json()
+      console.log("Environment check result:", result)
+      setEnvCheck(result)
+    } catch (err) {
+      console.error("Error checking environment:", err)
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+      setEnvError(errorMessage)
+
+      // Set a fallback result
+      setEnvCheck({
+        success: false,
+        environment: "unknown",
+        twelveDataKey: {
+          exists: false,
+          length: null,
+          firstChars: null,
+          lastChars: null,
+        },
+        timestamp: new Date().toISOString(),
+        error: errorMessage,
+      })
+    } finally {
+      setCheckingEnv(false)
+    }
+  }
 
   const handleFetch = async () => {
     if (!symbol.trim()) {
@@ -37,6 +112,69 @@ export function TwelveDataTest() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Error de verificación de entorno */}
+        {envError && (
+          <Alert className="border-red-500 bg-red-900/20 text-red-300">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error verificando entorno</AlertTitle>
+            <AlertDescription>
+              {envError}
+              <Button
+                onClick={checkEnvironment}
+                variant="outline"
+                size="sm"
+                className="ml-2 h-6 px-2 text-xs border-red-400 text-red-300 hover:bg-red-900/30"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Información del entorno */}
+        {envCheck && !envError && (
+          <Alert
+            className={
+              envCheck.twelveDataKey.exists
+                ? "border-blue-500 bg-blue-900/20 text-blue-300"
+                : "border-amber-500 bg-amber-900/20 text-amber-300"
+            }
+          >
+            <Info className="h-4 w-4" />
+            <AlertTitle>Información del entorno</AlertTitle>
+            <AlertDescription>
+              <div className="space-y-1 mt-1">
+                <div>
+                  <strong>Entorno:</strong> {envCheck.environment}
+                </div>
+                <div>
+                  <strong>API Key:</strong> {envCheck.twelveDataKey.exists ? "✅ Configurada" : "❌ No configurada"}
+                </div>
+                {envCheck.twelveDataKey.exists && (
+                  <>
+                    <div>
+                      <strong>Longitud:</strong> {envCheck.twelveDataKey.length} caracteres
+                    </div>
+                    <div>
+                      <strong>Formato:</strong> {envCheck.twelveDataKey.firstChars} ...{" "}
+                      {envCheck.twelveDataKey.lastChars}
+                    </div>
+                  </>
+                )}
+                <div>
+                  <strong>Timestamp:</strong> {new Date(envCheck.timestamp).toLocaleString()}
+                </div>
+                {envCheck.error && (
+                  <div className="text-red-300">
+                    <strong>Error:</strong> {envCheck.error}
+                  </div>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Formulario de entrada */}
         <div className="flex gap-2">
           <div className="flex-1">
@@ -198,6 +336,31 @@ if (data.success) {
           </CardContent>
         </Card>
       </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button
+          onClick={checkEnvironment}
+          variant="outline"
+          size="sm"
+          disabled={checkingEnv}
+          className="border-slate-600 text-slate-300 hover:bg-slate-700"
+        >
+          {checkingEnv ? (
+            <>
+              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              Verificando...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-3 w-3" />
+              Verificar entorno
+            </>
+          )}
+        </Button>
+
+        <div className="text-xs text-slate-400">
+          Última actualización: {envCheck ? new Date(envCheck.timestamp).toLocaleTimeString() : "No verificado"}
+        </div>
+      </CardFooter>
     </Card>
   )
 }
