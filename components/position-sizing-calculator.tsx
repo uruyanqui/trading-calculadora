@@ -69,117 +69,84 @@ export function PositionSizingCalculator() {
   const [usedMargin, setUsedMargin] = useState<number>(0)
   const [availableMargin, setAvailableMargin] = useState<number>(0)
   const [isCalculated, setIsCalculated] = useState<boolean>(false)
-  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false)
-  const [isLoadingAtr, setIsLoadingAtr] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState<boolean>(false)
-  const [isLoadingChart, setIsLoadingChart] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const [history, setHistory] = useState<CalculationHistory[]>([])
-  const [usingMockData, setUsingMockData] = useState<boolean>(false) // Default to false since we have API keys
+  const [usingMockData, setUsingMockData] = useState<boolean>(false)
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const [chartData, setChartData] = useState<CandleData[]>([])
   const [showChart, setShowChart] = useState<boolean>(false)
   const [chartIsMockData, setChartIsMockData] = useState<boolean>(false)
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
 
-  // Fetch price function using our API route
-  const fetchPrice = async () => {
+  // Fetch price and ATR function
+  const fetchPriceAndATR = async () => {
     if (!ticker) {
       setError("Por favor ingresa un ticker válido")
       return
     }
 
-    setIsLoadingPrice(true)
-    setIsLoadingChart(true)
+    setIsLoading(true)
     setError(null)
 
     try {
+      // Paso 1: Obtener el precio
       console.log(`Fetching price for ticker: ${ticker}`)
-      const result = await getTickerPrice(ticker)
+      const priceResult = await getTickerPrice(ticker)
 
-      if (result.price === null) {
+      if (priceResult.price === null) {
         setError(`No se pudo obtener el precio para ${ticker}. Verifica que el ticker sea válido.`)
-        setIsLoadingPrice(false)
-        setIsLoadingChart(false)
+        setIsLoading(false)
         return
       }
 
-      setPrice(result.price)
+      setPrice(priceResult.price)
+      let isMockData = priceResult.isMockData
 
-      // Update mock data status
-      setUsingMockData(result.isMockData)
-      if (result.isMockData) {
-        console.log("Using mock data for price:", ticker)
+      // Paso 2: Obtener el ATR
+      console.log(`Fetching ATR for ticker: ${ticker}`)
+      const atrResult = await calculateATR20(ticker)
+
+      if (atrResult.atr === null) {
+        setError(`No se pudo calcular el ATR para ${ticker}. Verifica que el ticker sea válido.`)
+        setIsLoading(false)
+        return
+      }
+
+      setAtr20(atrResult.atr)
+      isMockData = isMockData || atrResult.isMockData
+
+      // Paso 3: Obtener datos históricos para el gráfico
+      console.log(`Fetching historical data for ticker: ${ticker}`)
+      const historicalResult = await getHistoricalData(ticker)
+      setChartData(historicalResult.data)
+      setChartIsMockData(historicalResult.isMockData)
+      setShowChart(true)
+
+      // Actualizar estado de datos simulados
+      setUsingMockData(isMockData)
+      if (isMockData) {
+        console.log("Using mock data for:", ticker)
         setWarning(
           "Usando datos simulados. Para datos en tiempo real, configura una clave API de TwelveData en el archivo .env.local",
         )
       } else {
-        console.log("Using real data for price:", ticker)
+        console.log("Using real data for:", ticker)
         setWarning(null)
       }
-
-      // Fetch historical data for chart
-      try {
-        console.log(`Fetching historical data for ticker: ${ticker}`)
-        const historicalResult = await getHistoricalData(ticker)
-        setChartData(historicalResult.data)
-        setChartIsMockData(historicalResult.isMockData)
-        setShowChart(true)
-      } catch (chartError) {
-        console.error("Error fetching historical data:", chartError)
-        setShowChart(false)
-      }
     } catch (error) {
-      console.error("Error fetching price:", error)
-      setError("Error al obtener el precio. Usando datos simulados.")
-      // Establecer un precio simulado para que la aplicación siga funcionando
+      console.error("Error fetching data:", error)
+      setError("Error al obtener datos. Usando datos simulados.")
+
+      // Establecer datos simulados para que la aplicación siga funcionando
       setPrice(getFallbackPrice(ticker))
+      setAtr20(getFallbackATR(ticker))
       setUsingMockData(true)
       setShowChart(false)
     } finally {
-      setIsLoadingPrice(false)
-      setIsLoadingChart(false)
-    }
-  }
-
-  // Fetch ATR function using our API route
-  const fetchAtr = async () => {
-    if (!ticker) {
-      setError("Por favor ingresa un ticker válido")
-      return
-    }
-
-    setIsLoadingAtr(true)
-    setError(null)
-
-    try {
-      console.log(`Fetching ATR for ticker: ${ticker}`)
-      const result = await calculateATR20(ticker)
-
-      if (result.atr === null) {
-        setError(`No se pudo calcular el ATR para ${ticker}. Verifica que el ticker sea válido.`)
-        return
-      }
-
-      setAtr20(result.atr)
-
-      // Update mock data status
-      setUsingMockData(result.isMockData || usingMockData)
-      if (result.isMockData) {
-        setWarning(
-          "Usando datos simulados. Para datos en tiempo real, configura una clave API de TwelveData en el archivo .env.local",
-        )
-      } else if (!usingMockData) {
-        // Only clear the warning if we're not already using mock data from price
-        setWarning(null)
-      }
-    } catch (error) {
-      console.error("Error calculating ATR:", error)
-      setError("Error al calcular el ATR. Usando datos simulados.")
-      setUsingMockData(true)
-    } finally {
-      setIsLoadingAtr(false)
+      setIsLoading(false)
     }
   }
 
@@ -339,6 +306,22 @@ export function PositionSizingCalculator() {
     return MOCK_PRICES[upperTicker] || 100 + Math.random() * 50
   }
 
+  // Función para obtener un ATR simulado
+  function getFallbackATR(ticker: string): number {
+    const upperTicker = ticker.toUpperCase()
+    const price = getFallbackPrice(upperTicker)
+
+    // ATR is typically 1-3% of price for most stocks
+    let volatilityFactor = 0.01 + Math.random() * 0.02 // 1-3%
+
+    // Adjust volatility for known volatile stocks
+    if (upperTicker === "TSLA" || upperTicker === "NVDA" || upperTicker === "AMD") {
+      volatilityFactor = 0.03 + Math.random() * 0.02 // 3-5%
+    }
+
+    return Number((price * volatilityFactor).toFixed(2))
+  }
+
   // Mostrar diagnósticos si está activado
   if (showDiagnostics) {
     return (
@@ -451,11 +434,11 @@ export function PositionSizingCalculator() {
                     className="flex-1 bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
                   />
                   <Button
-                    onClick={fetchPrice}
-                    disabled={isLoadingPrice || !ticker}
+                    onClick={fetchPriceAndATR}
+                    disabled={isLoading || !ticker}
                     className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                   >
-                    {isLoadingPrice ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Cargando...
@@ -471,31 +454,16 @@ export function PositionSizingCalculator() {
                 <Label htmlFor="atr20" className="text-slate-200">
                   ATR20
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="atr20"
-                    type="number"
-                    value={atr20 || ""}
-                    onChange={(e) => setAtr20(Number(e.target.value))}
-                    placeholder="0.00"
-                    step="0.01"
-                    className="flex-1 bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
-                  />
-                  <Button
-                    onClick={fetchAtr}
-                    disabled={isLoadingAtr || !ticker}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-                  >
-                    {isLoadingAtr ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Calculando...
-                      </>
-                    ) : (
-                      "Obtener ATR"
-                    )}
-                  </Button>
-                </div>
+                <Input
+                  id="atr20"
+                  type="number"
+                  value={atr20 || ""}
+                  onChange={(e) => setAtr20(Number(e.target.value))}
+                  placeholder="0.00"
+                  step="0.01"
+                  className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
+                  readOnly={isLoading}
+                />
               </div>
 
               <div className="space-y-2">
@@ -588,7 +556,7 @@ export function PositionSizingCalculator() {
         </Card>
 
         {/* Gráfico de velas */}
-        {isLoadingChart ? (
+        {isLoading ? (
           <Card className="shadow-md bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-slate-100">Cargando gráfico...</CardTitle>
