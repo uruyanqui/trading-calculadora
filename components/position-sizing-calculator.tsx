@@ -108,10 +108,12 @@ export function PositionSizingCalculator() {
       // Update mock data status
       setUsingMockData(result.isMockData)
       if (result.isMockData) {
+        console.log("Using mock data for price:", ticker)
         setWarning(
           "Usando datos simulados. Para datos en tiempo real, configura una clave API de TwelveData en el archivo .env.local",
         )
       } else {
+        console.log("Using real data for price:", ticker)
         setWarning(null)
       }
 

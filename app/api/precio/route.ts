@@ -52,20 +52,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // If no API key is available, return mock data
-    // Esta condición ya no debería ejecutarse, pero la mantenemos por seguridad
-    if (!isValidApiKey) {
-      console.log("No API key found. Using mock price data for:", ticker)
-      const mockPrice = getMockPrice(ticker)
-
-      return NextResponse.json({
-        ticker,
-        price: Number(mockPrice.toFixed(2)),
-        timestamp: new Date().toISOString(),
-        isMockData: true,
-      })
-    }
-
     // Only attempt API call if we have an API key
     console.log("Using API key to fetch real price data for:", ticker)
 

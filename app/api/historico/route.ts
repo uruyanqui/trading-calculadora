@@ -88,6 +88,9 @@ export async function GET(request: NextRequest) {
     // Obtener API key
     const apiKey = process.env.TWELVE_DATA_KEY
 
+    // Log para depuración (no incluye la clave completa)
+    console.log(`TWELVE_DATA_KEY disponible: ${apiKey ? "Sí (longitud: " + apiKey.length + ")" : "No"}`)
+
     // Verificar si la API key es válida
     const isValidApiKey = apiKey && apiKey.trim() !== "" && apiKey.length > 10
 
@@ -121,6 +124,7 @@ export async function GET(request: NextRequest) {
 
       // Leer la respuesta como texto primero
       const responseText = await response.text()
+      console.log("API Response Text (first 100 chars):", responseText.substring(0, 100) + "...")
 
       // Verificar si la respuesta parece ser un mensaje de error
       if (responseText.includes("Invalid") || responseText.includes("Error")) {

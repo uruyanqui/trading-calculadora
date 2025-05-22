@@ -64,20 +64,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // If no API key is available, return mock data
-    if (!isValidApiKey) {
-      console.log("No API key found. Using mock ATR data for:", ticker)
-      const mockATR = generateMockATR(ticker)
-
-      return NextResponse.json({
-        ticker,
-        atr: mockATR,
-        period: Number(timePeriod),
-        timestamp: new Date().toISOString(),
-        isMockData: true,
-      })
-    }
-
     // Only attempt API call if we have an API key
     console.log("Using API key to fetch real ATR data for:", ticker)
 
