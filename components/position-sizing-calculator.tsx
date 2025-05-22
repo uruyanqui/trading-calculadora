@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertCircle, Loader2, Info, Target, Brain } from "lucide-react"
+import { AlertCircle, Loader2, Info, Target, Brain, Wrench } from "lucide-react"
 import { getTickerPrice, calculateATR20, getHistoricalData } from "@/app/actions/stock-data"
 import { CandlestickChart } from "@/components/candlestick-chart"
+import { ApiDiagnostics } from "@/components/api-diagnostics"
 import {
   Select,
   SelectContent,
@@ -80,6 +81,7 @@ export function PositionSizingCalculator() {
   const [chartData, setChartData] = useState<CandleData[]>([])
   const [showChart, setShowChart] = useState<boolean>(false)
   const [chartIsMockData, setChartIsMockData] = useState<boolean>(false)
+  const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
 
   // Fetch price function using our API route
   const fetchPrice = async () => {
@@ -337,6 +339,15 @@ export function PositionSizingCalculator() {
     return MOCK_PRICES[upperTicker] || 100 + Math.random() * 50
   }
 
+  // Mostrar diagnósticos si está activado
+  if (showDiagnostics) {
+    return (
+      <div className="grid gap-6">
+        <ApiDiagnostics onClose={() => setShowDiagnostics(false)} />
+      </div>
+    )
+  }
+
   // Modificar la estructura del grid para dar más espacio a los componentes
   return (
     <div className="grid gap-6">
@@ -352,25 +363,38 @@ export function PositionSizingCalculator() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={objective} onValueChange={setObjective}>
-            <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-100">
-              <SelectValue placeholder="Selecciona un objetivo" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700 text-slate-100">
-              <SelectGroup>
-                <SelectLabel className="text-slate-300">Objetivos</SelectLabel>
-                {TRADING_OBJECTIVES.map((obj) => (
-                  <SelectItem
-                    key={obj.value}
-                    value={obj.value}
-                    className="text-slate-100 focus:bg-slate-700 focus:text-slate-100"
-                  >
-                    {obj.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <Select value={objective} onValueChange={setObjective}>
+                <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-100">
+                  <SelectValue placeholder="Selecciona un objetivo" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700 text-slate-100">
+                  <SelectGroup>
+                    <SelectLabel className="text-slate-300">Objetivos</SelectLabel>
+                    {TRADING_OBJECTIVES.map((obj) => (
+                      <SelectItem
+                        key={obj.value}
+                        value={obj.value}
+                        className="text-slate-100 focus:bg-slate-700 focus:text-slate-100"
+                      >
+                        {obj.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => setShowDiagnostics(true)}
+              variant="outline"
+              size="sm"
+              className="ml-4 border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <Wrench className="h-4 w-4 mr-1" />
+              Diagnóstico
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

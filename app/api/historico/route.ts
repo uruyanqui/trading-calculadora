@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "El parámetro ticker es requerido" }, { status: 400 })
     }
 
-    // Obtener API key
+    // Obtener API key directamente de las variables de entorno
     const apiKey = process.env.TWELVE_DATA_KEY
 
     // Log para depuración (no incluye la clave completa)
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // Intentar obtener datos reales de TwelveData
     try {
-      const apiUrl = `https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1day&outputsize=${count}&apikey=${apiKey}`
+      const apiUrl = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(ticker)}&interval=1day&outputsize=${count}&apikey=${apiKey}`
 
       console.log("Fetching historical data from TwelveData API URL:", apiUrl.replace(apiKey, "API_KEY_HIDDEN"))
 

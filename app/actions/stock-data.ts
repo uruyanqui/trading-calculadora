@@ -13,8 +13,14 @@ interface CandleData {
 // Obtiene el precio actual desde nuestra ruta protegida
 export async function getTickerPrice(ticker: string): Promise<{ price: number | null; isMockData: boolean }> {
   try {
-    // Simplificamos para usar una URL relativa que Next.js manejará correctamente
-    const apiUrl = `/api/precio?ticker=${ticker}&_=${Date.now()}`
+    // Construir la URL completa para asegurarnos de que funcione en todos los entornos
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_VERCEL_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+        : "http://localhost:3000"
+
+    const apiUrl = `${baseUrl}/api/precio?ticker=${encodeURIComponent(ticker)}&_=${Date.now()}`
     console.log(`Fetching price from internal API: ${apiUrl}`)
 
     const response = await fetch(apiUrl, {
@@ -67,7 +73,7 @@ export async function getTickerPrice(ticker: string): Promise<{ price: number | 
 
     return {
       price: data.price || getFallbackPrice(ticker),
-      isMockData: data.isMockData === true && data.price !== undefined,
+      isMockData: data.isMockData === true,
     }
   } catch (error) {
     console.error("Error fetching ticker price:", error)
@@ -81,8 +87,14 @@ export async function getTickerPrice(ticker: string): Promise<{ price: number | 
 // Obtiene el ATR20 desde nuestra ruta protegida
 export async function calculateATR20(ticker: string): Promise<{ atr: number | null; isMockData: boolean }> {
   try {
-    // Simplificamos para usar una URL relativa que Next.js manejará correctamente
-    const apiUrl = `/api/atr?ticker=${ticker}&period=20&_=${Date.now()}`
+    // Construir la URL completa para asegurarnos de que funcione en todos los entornos
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_VERCEL_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+        : "http://localhost:3000"
+
+    const apiUrl = `${baseUrl}/api/atr?ticker=${encodeURIComponent(ticker)}&period=20&_=${Date.now()}`
     console.log(`Fetching ATR from internal API: ${apiUrl}`)
 
     const response = await fetch(apiUrl, {
@@ -135,7 +147,7 @@ export async function calculateATR20(ticker: string): Promise<{ atr: number | nu
 
     return {
       atr: data.atr || getFallbackATR(ticker),
-      isMockData: data.isMockData === true && data.atr !== undefined,
+      isMockData: data.isMockData === true,
     }
   } catch (error) {
     console.error("Error fetching ATR:", error)
@@ -149,8 +161,14 @@ export async function calculateATR20(ticker: string): Promise<{ atr: number | nu
 // Obtiene datos históricos para el gráfico de velas
 export async function getHistoricalData(ticker: string): Promise<{ data: CandleData[]; isMockData: boolean }> {
   try {
-    // Simplificamos para usar una URL relativa que Next.js manejará correctamente
-    const apiUrl = `/api/historico?ticker=${ticker}&count=100&_=${Date.now()}`
+    // Construir la URL completa para asegurarnos de que funcione en todos los entornos
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_VERCEL_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+        : "http://localhost:3000"
+
+    const apiUrl = `${baseUrl}/api/historico?ticker=${encodeURIComponent(ticker)}&count=100&_=${Date.now()}`
     console.log(`Fetching historical data from internal API: ${apiUrl}`)
 
     const response = await fetch(apiUrl, {
