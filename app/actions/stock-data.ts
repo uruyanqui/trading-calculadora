@@ -125,11 +125,7 @@ export async function calculateATR20(ticker: string): Promise<{ atr: number | nu
 
     return {
       atr: data.atr || getFallbackATR(ticker),
-<<<<<<< HEAD
-      isMockData: data.isMockData === true,
-=======
       isMockData: data.isMockData === true && data.atr !== undefined,
->>>>>>> 69ba4a9 (Reconectar proyecto con GitHub)
     }
   } catch (error) {
     console.error("Error fetching ATR:", error)
