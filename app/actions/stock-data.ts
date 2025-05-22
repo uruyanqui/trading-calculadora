@@ -1,5 +1,15 @@
 "use server"
 
+// Tipos para los datos históricos
+interface CandleData {
+  datetime: string
+  open: number
+  high: number
+  low: number
+  close: number
+  volume?: number
+}
+
 // Obtiene el precio actual desde nuestra ruta protegida
 export async function getTickerPrice(ticker: string): Promise<{ price: number | null; isMockData: boolean }> {
   try {
@@ -131,6 +141,66 @@ export async function calculateATR20(ticker: string): Promise<{ atr: number | nu
     console.error("Error fetching ATR:", error)
     return {
       atr: getFallbackATR(ticker),
+      isMockData: true,
+    }
+  }
+}
+
+// Obtiene datos históricos para el gráfico de velas
+export async function getHistoricalData(ticker: string): Promise<{ data: CandleData[]; isMockData: boolean }> {
+  try {
+    // Simplificamos para usar una URL relativa que Next.js manejará correctamente
+    const apiUrl = `/api/historico?ticker=${ticker}&count=100&_=${Date.now()}`
+    console.log(`Fetching historical data from internal API: ${apiUrl}`)
+
+    const response = await fetch(apiUrl, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`API error (${response.status}) fetching historical data for ${ticker}`)
+      return {
+        data: [],
+        isMockData: true,
+      }
+    }
+
+    // Intentar leer la respuesta como texto primero para depuración
+    const responseText = await response.text()
+
+    // Verificar si la respuesta parece ser un mensaje de error
+    if (responseText.includes("Invalid") || responseText.includes("Error")) {
+      console.error("API returned error message:", responseText)
+      return {
+        data: [],
+        isMockData: true,
+      }
+    }
+
+    // Luego parsear como JSON
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error("Error parsing JSON:", parseError, "Response was:", responseText)
+      return {
+        data: [],
+        isMockData: true,
+      }
+    }
+
+    return {
+      data: data.data || [],
+      isMockData: data.isMockData === true,
+    }
+  } catch (error) {
+    console.error("Error fetching historical data:", error)
+    return {
+      data: [],
       isMockData: true,
     }
   }
