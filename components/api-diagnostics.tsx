@@ -24,11 +24,6 @@ export function ApiDiagnostics({ onClose }: ApiDiagnosticsProps) {
     setError(null)
 
     try {
-      // Verificar la configuración del entorno
-      const envCheck = await fetch("/api/env-check")
-        .then((res) => (res.ok ? res.json() : { success: false, error: `HTTP error ${res.status}` }))
-        .catch((err) => ({ success: false, error: err.message }))
-
       // Verificar la API de precio
       const priceCheck = await fetch("/api/precio?ticker=MSFT")
         .then((res) => (res.ok ? res.json() : { success: false, error: `HTTP error ${res.status}` }))
@@ -44,17 +39,10 @@ export function ApiDiagnostics({ onClose }: ApiDiagnosticsProps) {
         .then((res) => (res.ok ? res.json() : { success: false, error: `HTTP error ${res.status}` }))
         .catch((err) => ({ success: false, error: err.message }))
 
-      // Verificar la API de twelve
-      const twelveCheck = await fetch("/api/twelve?symbol=MSFT")
-        .then((res) => (res.ok ? res.json() : { success: false, error: `HTTP error ${res.status}` }))
-        .catch((err) => ({ success: false, error: err.message }))
-
       setResults({
-        env: envCheck,
         price: priceCheck,
         atr: atrCheck,
         historical: historicalCheck,
-        twelve: twelveCheck,
         timestamp: new Date().toISOString(),
       })
     } catch (err) {
@@ -69,7 +57,7 @@ export function ApiDiagnostics({ onClose }: ApiDiagnosticsProps) {
     return (
       <Card className="w-full bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-slate-100">Ejecutando diagnósticos de API...</CardTitle>
+          <CardTitle className="text-slate-100">Ejecutando diagnósticos...</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center py-12">
           <div className="text-center">
@@ -98,80 +86,45 @@ export function ApiDiagnostics({ onClose }: ApiDiagnosticsProps) {
         {/* Resumen de resultados */}
         <Alert
           className={
-            results.env?.success && results.twelve?.success
+            results.price &&
+            results.atr &&
+            results.historical &&
+            !results.price.error &&
+            !results.atr.error &&
+            !results.historical.error
               ? "border-green-500 bg-green-900/20 text-green-300"
               : "border-amber-500 bg-amber-900/20 text-amber-300"
           }
         >
-          {results.env?.success && results.twelve?.success ? (
+          {results.price &&
+          results.atr &&
+          results.historical &&
+          !results.price.error &&
+          !results.atr.error &&
+          !results.historical.error ? (
             <CheckCircle className="h-4 w-4" />
           ) : (
             <Info className="h-4 w-4" />
           )}
-          <AlertTitle>Resumen de diagnóstico</AlertTitle>
+          <AlertTitle>Estado de las APIs</AlertTitle>
           <AlertDescription>
             <div className="space-y-1 mt-1">
               <div>
-                <strong>Configuración de entorno:</strong>{" "}
-                {results.env?.success ? "✅ Correcta" : "❌ Problemas detectados"}
-              </div>
-              <div>
-                <strong>API Twelve Data (prueba):</strong>{" "}
-                {results.twelve?.success ? "✅ Funcionando" : "❌ No funciona"}
-              </div>
-              <div>
-                <strong>API de precio:</strong> {results.price && !results.price.error ? "✅ Responde" : "❌ Error"}
+                <strong>API de precio:</strong> {results.price && !results.price.error ? "✅ Funcionando" : "❌ Error"}
                 {results.price?.isMockData === true && " (usando datos simulados)"}
               </div>
               <div>
-                <strong>API de ATR:</strong> {results.atr && !results.atr.error ? "✅ Responde" : "❌ Error"}
+                <strong>API de ATR:</strong> {results.atr && !results.atr.error ? "✅ Funcionando" : "❌ Error"}
                 {results.atr?.isMockData === true && " (usando datos simulados)"}
               </div>
               <div>
                 <strong>API de datos históricos:</strong>{" "}
-                {results.historical && !results.historical.error ? "✅ Responde" : "❌ Error"}
+                {results.historical && !results.historical.error ? "✅ Funcionando" : "❌ Error"}
                 {results.historical?.isMockData === true && " (usando datos simulados)"}
               </div>
             </div>
           </AlertDescription>
         </Alert>
-
-        {/* Detalles de la configuración de entorno */}
-        {results.env && (
-          <Card className="bg-slate-700 border-slate-600">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-slate-100 text-lg">Configuración de entorno</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-slate-400">Entorno:</span>
-                  <div className="text-slate-100">{results.env.environment}</div>
-                </div>
-                <div>
-                  <span className="text-slate-400">API Key:</span>
-                  <div className="text-slate-100">
-                    {results.env.twelveDataKey?.exists ? "Configurada" : "No configurada"}
-                  </div>
-                </div>
-                {results.env.twelveDataKey?.exists && (
-                  <>
-                    <div>
-                      <span className="text-slate-400">Longitud:</span>
-                      <div className="text-slate-100">{results.env.twelveDataKey.length} caracteres</div>
-                    </div>
-                    <div>
-                      <span className="text-slate-400">Formato:</span>
-                      <div className="text-slate-100">
-                        {results.env.twelveDataKey.firstChars} ... {results.env.twelveDataKey.lastChars}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Detalles de la API de precio */}
         {results.price && (

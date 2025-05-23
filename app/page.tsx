@@ -1,5 +1,4 @@
 import { PositionSizingCalculator } from "@/components/position-sizing-calculator"
-import { TwelveDataTest } from "@/components/twelve-data-test"
 
 export default function Home() {
   return (
@@ -9,15 +8,6 @@ export default function Home() {
 
         {/* Calculadora principal */}
         <PositionSizingCalculator />
-
-        {/* Separador */}
-        <div className="border-t border-slate-700 my-8"></div>
-
-        {/* Componente de prueba de la API */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-center text-slate-100">Prueba de API Twelve Data</h2>
-          <TwelveDataTest />
-        </div>
       </div>
     </main>
   )
