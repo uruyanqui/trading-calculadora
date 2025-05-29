@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+<<<<<<< HEAD
 import { AlertCircle, Loader2, Info, Target, Brain } from "lucide-react"
 import { getTickerPrice, calculateATR20, getHistoricalData } from "@/app/actions/stock-data"
 import { CandlestickChart } from "@/components/candlestick-chart"
+=======
+import { AlertCircle, Loader2, Info, Target, Brain, Wrench } from "lucide-react"
+import { getTickerPrice, calculateATR20, getHistoricalData } from "@/app/actions/stock-data"
+import { CandlestickChart } from "@/components/candlestick-chart"
+import { ApiDiagnostics } from "@/components/api-diagnostics"
+>>>>>>> 87eb66740461ec1932ed4550f5bd038f158ee2b3
 import {
   Select,
   SelectContent,
@@ -78,6 +85,10 @@ export function PositionSizingCalculator() {
   const [chartData, setChartData] = useState<CandleData[]>([])
   const [showChart, setShowChart] = useState<boolean>(false)
   const [chartIsMockData, setChartIsMockData] = useState<boolean>(false)
+<<<<<<< HEAD
+=======
+  const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
+>>>>>>> 87eb66740461ec1932ed4550f5bd038f158ee2b3
 
   // Fetch price and ATR function
   const fetchPriceAndATR = async () => {
@@ -320,6 +331,18 @@ export function PositionSizingCalculator() {
     return Number((price * volatilityFactor).toFixed(2))
   }
 
+<<<<<<< HEAD
+=======
+  // Mostrar diagnósticos si está activado
+  if (showDiagnostics) {
+    return (
+      <div className="grid gap-6">
+        <ApiDiagnostics onClose={() => setShowDiagnostics(false)} />
+      </div>
+    )
+  }
+
+>>>>>>> 87eb66740461ec1932ed4550f5bd038f158ee2b3
   // Modificar la estructura del grid para dar más espacio a los componentes
   return (
     <div className="grid gap-6">
@@ -357,6 +380,18 @@ export function PositionSizingCalculator() {
                 </SelectContent>
               </Select>
             </div>
+<<<<<<< HEAD
+=======
+            <Button
+              onClick={() => setShowDiagnostics(true)}
+              variant="outline"
+              size="sm"
+              className="ml-4 border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <Wrench className="h-4 w-4 mr-1" />
+              Diagnóstico
+            </Button>
+>>>>>>> 87eb66740461ec1932ed4550f5bd038f158ee2b3
           </div>
         </CardContent>
       </Card>
