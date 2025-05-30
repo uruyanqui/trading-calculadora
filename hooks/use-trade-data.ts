@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 // Interfaces para los datos de trading
 export interface NewsWithSentiment {
@@ -14,27 +14,30 @@ export interface TradeData {
   price: number
   news: NewsWithSentiment[]
   averageSentiment: number
+  timestamp: string
 }
 
 interface UseTradeDataResult {
   data: TradeData | null
   loading: boolean
   error: string | null
-  fetchData: () => Promise<void>
+  fetchData: (ticker: string) => Promise<void>
+  clearData: () => void
 }
 
 /**
- * Hook personalizado para obtener y gestionar datos de trading
+ * Hook personalizado para obtener y gestionar datos de trading completos
+ * Incluye precio, noticias y análisis de sentimiento
  */
-export function useTradeData(ticker: string): UseTradeDataResult {
+export function useTradeData(): UseTradeDataResult {
   const [data, setData] = useState<TradeData | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Función para obtener los datos
-  const fetchData = async () => {
-    if (!ticker) {
-      setError("Se requiere un ticker")
+  // Función para obtener los datos completos de trading
+  const fetchData = async (ticker: string) => {
+    if (!ticker || ticker.trim() === "") {
+      setError("Se requiere un ticker válido")
       return
     }
 
@@ -42,11 +45,19 @@ export function useTradeData(ticker: string): UseTradeDataResult {
     setError(null)
 
     try {
-      // Construir la URL con el ticker
-      const url = `/api/trade-data?ticker=${encodeURIComponent(ticker)}`
+      console.log(`Obteniendo datos de trading para: ${ticker}`)
 
-      // Realizar la petición
-      const response = await fetch(url)
+      // Construir la URL con el ticker
+      const url = `/api/trade-data?ticker=${encodeURIComponent(ticker.toUpperCase())}`
+
+      // Realizar la petición al endpoint que incluye precio, noticias y sentimiento
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store", // Siempre obtener datos frescos
+      })
 
       // Verificar si la respuesta es correcta
       if (!response.ok) {
@@ -57,8 +68,19 @@ export function useTradeData(ticker: string): UseTradeDataResult {
       // Parsear la respuesta
       const result = await response.json()
 
+      // Validar que tenemos todos los datos necesarios
+      if (!result.ticker || result.price === undefined || !result.news || result.averageSentiment === undefined) {
+        throw new Error("Datos incompletos recibidos del servidor")
+      }
+
       // Actualizar el estado con los datos obtenidos
       setData(result)
+
+      console.log(`Datos obtenidos exitosamente para ${ticker}:`, {
+        price: result.price,
+        newsCount: result.news.length,
+        sentiment: result.averageSentiment,
+      })
     } catch (err) {
       console.error("Error obteniendo datos de trading:", err)
       setError(err instanceof Error ? err.message : "Error desconocido")
@@ -67,11 +89,17 @@ export function useTradeData(ticker: string): UseTradeDataResult {
     }
   }
 
-  // Efecto para cargar los datos automáticamente al montar el componente
-  useEffect(() => {
-    // No cargar automáticamente, solo cuando se llame a fetchData
-    // Esto es para que el usuario pueda controlar cuándo se obtienen los datos
-  }, [ticker])
+  // Función para limpiar los datos
+  const clearData = () => {
+    setData(null)
+    setError(null)
+  }
 
-  return { data, loading, error, fetchData }
+  return {
+    data,
+    loading,
+    error,
+    fetchData,
+    clearData,
+  }
 }
