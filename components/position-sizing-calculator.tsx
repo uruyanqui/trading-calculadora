@@ -54,11 +54,11 @@ const TRADING_OBJECTIVES = [
 export function PositionSizingCalculator() {
   // Form state
   const [capital, setCapital] = useState<number>(10000)
-  const [ticker, setTicker] = useState<string>("SPY")
+  const [ticker, setTicker] = useState<string>("AAPL")
   const [price, setPrice] = useState<number>(0)
   const [atr20, setAtr20] = useState<number>(0)
-  const [atrMultiplier, setAtrMultiplier] = useState<number>(1.5)
-  const [riskPercentage, setRiskPercentage] = useState<number>(1)
+  const [atrMultiplier, setAtrMultiplier] = useState<number>(1)
+  const [riskPercentage, setRiskPercentage] = useState<number>(1.5)
   const [objective, setObjective] = useState<string>("preservation")
 
   // Results state
@@ -455,7 +455,7 @@ export function PositionSizingCalculator() {
                   type="number"
                   value={atrMultiplier}
                   onChange={(e) => setAtrMultiplier(Number(e.target.value))}
-                  placeholder="1.5"
+                  placeholder="1"
                   step="0.1"
                   className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
                 />
@@ -470,7 +470,7 @@ export function PositionSizingCalculator() {
                   type="number"
                   value={riskPercentage}
                   onChange={(e) => setRiskPercentage(Number(e.target.value))}
-                  placeholder="1"
+                  placeholder="1.5"
                   step="0.1"
                   className="bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400"
                 />
